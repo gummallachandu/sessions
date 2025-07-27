@@ -1,41 +1,23 @@
-Object-Oriented Programming Basics
-Classes and Objects
-Classes are blueprints for creating objects (instances). Objects bundle data and functions. This is useful in GenAI for modeling entities like datasets or models.
+# Object-Oriented Programming Basics
+# Classes and Objects
+# Classes are blueprints for creating objects (instances). Objects bundle data and functions. This is useful in GenAI for modeling entities like datasets or models.
 
-Notes: Define a class with class keyword. Create objects by calling the class like a function.
+# Notes: Define a class with class keyword. Create objects by calling the class like a function.
 
-Example:
+# Example
 
-python
-
-Collapse
-
-Wrap
-
-Run
-
-Copy
 class Dog:
     pass  # Placeholder for class body
 
 my_dog = Dog()  # Create an object
 print(type(my_dog))  # <class '__main__.Dog'>
-init Constructor
-The __init__ method initializes object attributes when created. It's like a setup function.
 
-Notes: Use self to refer to the instance. Called automatically on object creation.
+# init Constructor
+# The __init__ method initializes object attributes when created. It's like a setup function.
 
-Example:
+# Notes: Use self to refer to the instance. Called automatically on object creation.
 
-python
 
-Collapse
-
-Wrap
-
-Run
-
-Copy
 class Dog:
     def __init__(self, name, age):
         self.name = name  # Instance attribute
@@ -43,22 +25,13 @@ class Dog:
 
 my_dog = Dog("Buddy", 3)
 print(f"{my_dog.name} is {my_dog.age} years old")  # Buddy is 3 years old
-Instance Methods, Class Attributes
-Instance methods operate on objects (use self). Class attributes are shared across all instances.
 
-Notes: Methods are functions inside classes. Class attributes are defined outside methods.
+# Instance Methods, Class Attributes
+# Instance methods operate on objects (use self). Class attributes are shared across all instances.
 
-Example:
+# Notes: Methods are functions inside classes. Class attributes are defined outside methods.
 
-python
 
-Collapse
-
-Wrap
-
-Run
-
-Copy
 class Dog:
     species = "Canine"  # Class attribute (shared)
 
@@ -71,22 +44,14 @@ class Dog:
 my_dog = Dog("Buddy")
 print(my_dog.bark())  # Buddy says Woof!
 print(Dog.species)  # Canine (accessible via class or instance)
-Inheritance and Method Overriding
-Inheritance lets a child class inherit from a parent. Overriding redefines a parent method in the child.
 
-Notes: Use super() to call parent methods. Useful in GenAI for extending base models.
 
-Example:
+# Inheritance and Method Overriding
+# Inheritance lets a child class inherit from a parent. Overriding redefines a parent method in the child.
 
-python
+# Notes: Use super() to call parent methods. Useful in GenAI for extending base models.
 
-Collapse
 
-Wrap
-
-Run
-
-Copy
 class Animal:  # Parent class
     def sound(self):
         return "Some sound"
