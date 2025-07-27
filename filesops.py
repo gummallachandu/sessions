@@ -62,3 +62,16 @@ with open("data.json", "w") as file:
 with open("data.json", "r") as file:
     loaded = json.load(file)
 print(loaded["name"])  # Alice
+
+
+def read_in_chunks(file_path, chunk_size=1024):  # Generator function
+    with open(file_path, "rb") as file:  # Binary mode for any file type
+        while True:
+            chunk = file.read(chunk_size)  # Read fixed-size chunk
+            if not chunk:  # End of file
+                break
+            yield chunk  # Yield (return lazily) without storing
+
+# Usage: Process chunks lazily
+for chunk in read_in_chunks("large_file.bin", chunk_size=4096):  # 4KB chunks
+    print(len(chunk))  # Process chunk (e.g., analyse or upload to AI model)
