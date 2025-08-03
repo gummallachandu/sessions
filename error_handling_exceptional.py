@@ -14,6 +14,38 @@ try:
 except ValueError as e:
     print(f"Error: {e}")  # Error: invalid literal for int() with base 10: 'abc'
 
+
+import os
+
+
+# Example: Reading a file safely without exceptions
+filename = "data.txt"
+
+f = open(filename, "r")
+content = f.read()
+f.close()
+
+with open(filename, "r") as f:  # auto-closes file
+    content = f.read()
+
+if os.path.exists(filename):
+    f = open(filename, "r")
+    content = f.read()
+    f.close()
+    print(content)
+else:
+    print("File not found!")
+
+try:
+    with open("data.txt", "r") as f:   # auto-closes file
+        content = f.read()
+    print(content)
+
+except FileNotFoundError:
+    print("File not found!")
+except PermissionError:
+    print("No permission to read this file.")
+
 # Raising Exceptions
 # Manually throw errors with raise.
 
