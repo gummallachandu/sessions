@@ -1,4 +1,4 @@
-
+# highest occurance 
 stack = [1,1,3,3,3,4,4,4,4,4,4]
 def highestoccurance(arr):
     major_len = len(arr)/2
