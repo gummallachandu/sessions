@@ -1,0 +1,204 @@
+Easy (warm-ups: GROUP BY, HAVING)
+1) Count films per rating
+-- How many films are there by MPAA rating?
+SELECT f.rating, COUNT(*) AS film_count
+FROM film AS f
+GROUP BY f.rating
+ORDER BY film_count DESC;
+
+2) Top 10 categories by number of films
+-- Which categories have the most films?
+SELECT c.name AS category, COUNT(*) AS film_count
+FROM category AS c
+JOIN film_category AS fc ON fc.category_id = c.category_id
+GROUP BY c.category_id, c.name
+ORDER BY film_count DESC
+LIMIT 10;
+
+3) Actors with at least 20 films (HAVING)
+-- Find actors who acted in 20+ films
+SELECT a.actor_id, CONCAT(a.first_name, ' ', a.last_name) AS actor, COUNT(*) AS film_count
+FROM actor AS a
+JOIN film_actor AS fa ON fa.actor_id = a.actor_id
+GROUP BY a.actor_id, a.first_name, a.last_name
+HAVING COUNT(*) >= 20
+ORDER BY film_count DESC, actor;
+
+4) Films per language (only languages with 50+ films)
+SELECT l.name AS language_name, COUNT(*) AS film_count
+FROM language AS l
+JOIN film AS f ON f.language_id = l.language_id
+GROUP BY l.language_id, l.name
+HAVING COUNT(*) >= 50
+ORDER BY film_count DESC;
+
+Medium (joins + aggregates on rentals/payments)
+5) Monthly revenue (year, month, total)
+-- Total revenue per year-month
+SELECT
+  YEAR(p.payment_date) AS year,
+  MONTH(p.payment_date) AS month,
+  ROUND(SUM(p.amount), 2) AS revenue
+FROM payment AS p
+GROUP BY YEAR(p.payment_date), MONTH(p.payment_date)
+ORDER BY year, month;
+
+6) Revenue by store
+-- Which store earns more?
+SELECT s.store_id, ROUND(SUM(p.amount), 2) AS revenue
+FROM store AS s
+JOIN staff AS st ON st.store_id = s.store_id
+JOIN payment AS p ON p.staff_id = st.staff_id
+GROUP BY s.store_id
+ORDER BY revenue DESC;
+
+7) Top 10 customers by total spend
+SELECT
+  c.customer_id,
+  CONCAT(c.first_name, ' ', c.last_name) AS customer,
+  ROUND(SUM(p.amount), 2) AS total_spent
+FROM customer AS c
+JOIN payment AS p ON p.customer_id = c.customer_id
+GROUP BY c.customer_id, c.first_name, c.last_name
+ORDER BY total_spent DESC
+LIMIT 10;
+
+8) Average rental duration per category
+-- Use rental.return_date - rental.rental_date to measure duration (in days)
+SELECT
+  c.name AS category,
+  ROUND(AVG(TIMESTAMPDIFF(DAY, r.rental_date, r.return_date)), 2) AS avg_days
+FROM category AS c
+JOIN film_category AS fc ON fc.category_id = c.category_id
+JOIN inventory AS i ON i.film_id = fc.film_id
+JOIN rental AS r ON r.inventory_id = i.inventory_id
+WHERE r.return_date IS NOT NULL
+GROUP BY c.category_id, c.name
+ORDER BY avg_days DESC;
+
+9) Most-rented films (by rental count)
+SELECT
+  f.film_id,
+  f.title,
+  COUNT(*) AS rental_count
+FROM film AS f
+JOIN inventory AS i ON i.film_id = f.film_id
+JOIN rental AS r ON r.inventory_id = i.inventory_id
+GROUP BY f.film_id, f.title
+ORDER BY rental_count DESC, f.title
+LIMIT 15;
+
+CTEs (easy → medium). Requires MySQL 8.0+
+10) CTE: Active customers (who rented in the last 90 days)
+WITH recent_renters AS (
+  SELECT DISTINCT r.customer_id
+  FROM rental AS r
+  WHERE r.rental_date >= (CURRENT_DATE - INTERVAL 90 DAY)
+)
+SELECT
+  c.customer_id,
+  CONCAT(c.first_name, ' ', c.last_name) AS customer,
+  c.email
+FROM customer AS c
+JOIN recent_renters AS rr ON rr.customer_id = c.customer_id
+ORDER BY customer;
+
+11) CTE chain: Category revenue leaderboard
+-- Revenue per film then roll-up to category
+WITH film_revenue AS (
+  SELECT
+    i.film_id,
+    SUM(p.amount) AS revenue
+  FROM payment AS p
+  JOIN rental AS r ON r.rental_id = p.rental_id
+  JOIN inventory AS i ON i.inventory_id = r.inventory_id
+  GROUP BY i.film_id
+),
+category_revenue AS (
+  SELECT
+    c.category_id,
+    c.name AS category,
+    SUM(fr.revenue) AS revenue
+  FROM category AS c
+  JOIN film_category AS fc ON fc.category_id = c.category_id
+  JOIN film_revenue AS fr ON fr.film_id = fc.film_id
+  GROUP BY c.category_id, c.name
+)
+SELECT category, ROUND(revenue, 2) AS revenue
+FROM category_revenue
+ORDER BY revenue DESC
+LIMIT 10;
+
+12) CTE + HAVING: “Power customers” per city
+-- For each city: customers whose total spend > city average
+WITH city_spend AS (
+  SELECT
+    ci.city_id,
+    ci.city,
+    c.customer_id,
+    SUM(p.amount) AS total_spend
+  FROM city AS ci
+  JOIN address AS a ON a.city_id = ci.city_id
+  JOIN customer AS c ON c.address_id = a.address_id
+  JOIN payment AS p ON p.customer_id = c.customer_id
+  GROUP BY ci.city_id, ci.city, c.customer_id
+),
+city_avg AS (
+  SELECT city_id, AVG(total_spend) AS avg_spend
+  FROM city_spend
+  GROUP BY city_id
+)
+SELECT
+  cs.city,
+  cs.customer_id,
+  ROUND(cs.total_spend, 2) AS total_spend,
+  ROUND(ca.avg_spend, 2) AS city_avg_spend
+FROM city_spend AS cs
+JOIN city_avg AS ca USING (city_id)
+WHERE cs.total_spend > ca.avg_spend
+ORDER BY cs.city, total_spend DESC;
+
+13) CTE: “Sticky” films (many distinct renters)
+-- Films with at least N distinct customers (default N=30)
+WITH film_audience AS (
+  SELECT
+    f.film_id,
+    f.title,
+    COUNT(DISTINCT r.customer_id) AS distinct_customers
+  FROM film AS f
+  JOIN inventory AS i ON i.film_id = f.film_id
+  JOIN rental AS r ON r.inventory_id = i.inventory_id
+  GROUP BY f.film_id, f.title
+)
+SELECT *
+FROM film_audience
+WHERE distinct_customers >= 30
+ORDER BY distinct_customers DESC, title;
+
+14) CTE: Store performance snapshot (rentals, revenue, avg ticket)
+WITH store_rentals AS (
+  SELECT
+    s.store_id,
+    COUNT(r.rental_id) AS rentals
+  FROM store AS s
+  JOIN inventory AS i ON i.store_id = s.store_id
+  JOIN rental AS r ON r.inventory_id = i.inventory_id
+  GROUP BY s.store_id
+),
+store_revenue AS (
+  SELECT
+    s.store_id,
+    SUM(p.amount) AS revenue
+  FROM store AS s
+  JOIN staff AS st ON st.store_id = s.store_id
+  JOIN payment AS p ON p.staff_id = st.staff_id
+  GROUP BY s.store_id
+)
+SELECT
+  sr.store_id,
+  sr.rentals,
+  ROUND(rv.revenue, 2) AS revenue,
+  ROUND(rv.revenue / NULLIF(sr.rentals, 0), 2) AS avg_ticket
+FROM store_rentals AS sr
+JOIN store_revenue AS rv USING (store_id)
+ORDER BY revenue DESC;
