@@ -1,3 +1,23 @@
+-- First: get total rentals per customer
+WITH totals AS (
+  SELECT customer_id, COUNT(*) AS total_rentals
+  FROM rental
+  GROUP BY customer_id
+)
+-- Then: join totals back to detail rows
+SELECT
+  r.rental_id,
+  r.customer_id,
+  r.rental_date,
+  t.total_rentals
+FROM rental r
+JOIN totals t
+  ON r.customer_id = t.customer_id
+ORDER BY r.customer_id, r.rental_date;
+
+
+
+
 ✅ Window function version (cleaner)
 SELECT
   r.rental_id,
