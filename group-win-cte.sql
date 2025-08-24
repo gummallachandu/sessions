@@ -1,3 +1,22 @@
+-- the most rented film
+
+SELECT film_id, title, counts
+FROM (
+    SELECT 
+        f.film_id,
+        f.title,
+        COUNT(*) AS counts,
+        rank() OVER (ORDER BY COUNT(*) DESC) AS rank_no
+    FROM film f
+    JOIN inventory i ON i.film_id = f.film_id
+    JOIN rental r ON r.inventory_id = i.inventory_id
+    GROUP BY f.film_id, f.title
+) ranked_films
+WHERE rank_no <= 3
+ORDER BY counts DESC
+
+
+
 -- Find the top 2 films per category based on the number of rentals.
 SELECT 
     c.name AS category,
