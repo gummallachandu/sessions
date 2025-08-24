@@ -1,78 +1,59 @@
--- First: get total rentals per customer
-WITH totals AS (
-  SELECT customer_id, COUNT(*) AS total_rentals
-  FROM rental
-  GROUP BY customer_id
+-- Find the top 2 films per category based on the number of rentals.
+SELECT 
+    c.name AS category,
+    f.title,
+    COUNT(r.rental_id) AS total_rentals
+FROM rental r
+JOIN inventory i ON r.inventory_id = i.inventory_id
+JOIN film f ON i.film_id = f.film_id
+JOIN film_category fc ON f.film_id = fc.film_id
+JOIN category c ON fc.category_id = c.category_id
+GROUP BY c.name, f.title
+ORDER BY c.name, total_rentals DESC
+LIMIT 2;
+❌ Problem:
+-- The LIMIT 2 applies globally, not per category.
+-- You don’t get the top 2 films per category — you only get 2 films overall.
+
+--   
+
+SELECT category, title, total_rentals
+FROM (
+    SELECT 
+        c.name AS category,
+        f.title,
+        COUNT(r.rental_id) AS total_rentals,
+        RANK() OVER (PARTITION BY c.name ORDER BY COUNT(r.rental_id) DESC) AS film_rank
+    FROM rental r
+    JOIN inventory i ON r.inventory_id = i.inventory_id
+    JOIN film f ON i.film_id = f.film_id
+    JOIN film_category fc ON f.film_id = fc.film_id
+    JOIN category c ON fc.category_id = c.category_id
+    GROUP BY c.name, f.title
+) ranked_films
+WHERE film_rank <= 2
+ORDER BY category, film_rank;
+
+-- CTE type of the query
+
+WITH ranked_films AS (
+    SELECT 
+        c.name AS category,
+        f.title,
+        COUNT(r.rental_id) AS total_rentals,
+        RANK() OVER (PARTITION BY c.name ORDER BY COUNT(r.rental_id) DESC) AS film_rank
+    FROM rental r
+    JOIN inventory i ON r.inventory_id = i.inventory_id
+    JOIN film f ON i.film_id = f.film_id
+    JOIN film_category fc ON f.film_id = fc.film_id
+    JOIN category c ON fc.category_id = c.category_id
+    GROUP BY c.name, f.title
 )
--- Then: join totals back to detail rows
-SELECT
-  r.rental_id,
-  r.customer_id,
-  r.rental_date,
-  t.total_rentals
-FROM rental r
-JOIN totals t
-  ON r.customer_id = t.customer_id
-ORDER BY r.customer_id, r.rental_date;
+SELECT 
+    category, 
+    title, 
+    total_rentals
+FROM ranked_films
+WHERE film_rank <= 2
+ORDER BY category, film_rank;
 
-
-
-
-✅ Window function version (cleaner)
-SELECT
-  r.rental_id,
-  r.customer_id,
-  r.rental_date,
-  COUNT(*) OVER (PARTITION BY r.customer_id) AS total_rentals_for_customer
-FROM rental r
-ORDER BY r.customer_id, r.rental_date;
-
-
--- Keeps all rental rows.
-
--- Adds a new column showing the per-customer total rentals (same value repeated for each rental by that customer).
-
-
--- Using a derived table (subquery) instead of CTE
-SELECT
-  r.rental_id,
-  r.customer_id,
-  r.rental_date,
-  t.total_rentals
-FROM rental r
-JOIN (
-    SELECT customer_id, COUNT(*) AS total_rentals
-    FROM rental
-    GROUP BY customer_id
-) t
-  ON r.customer_id = t.customer_id
-ORDER BY r.customer_id, r.rental_date;
-
-
-GROUP BY version (needs join / subquery)
-
-With plain GROUP BY, you lose the detail rows (rental_id, rental_date).
-So you need to calculate totals in a subquery, then join back:
-
--- First: get total rentals per customer
-WITH totals AS (
-  SELECT customer_id, COUNT(*) AS total_rentals
-  FROM rental
-  GROUP BY customer_id
-)
--- Then: join totals back to detail rows
-SELECT
-  r.rental_id,
-  r.customer_id,
-  r.rental_date,
-  t.total_rentals
-FROM rental r
-JOIN totals t
-  ON r.customer_id = t.customer_id
-ORDER BY r.customer_id, r.rental_date;
-
--- 🔑 Key difference
-
--- GROUP BY alone collapses the rows — you can’t keep both detail (r.rental_id) and the aggregate (COUNT(*)) in the same query without extra work.
-
--- Window function lets you do it in one pass, no extra join or CTE.
