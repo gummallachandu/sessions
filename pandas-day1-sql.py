@@ -1,3 +1,14 @@
+!pip install sqlalchemy pymysql pandas
+
+!pip install sqlalchemy pymysql pandas
+
+import pandas as pd
+from sqlalchemy import create_engine
+
+# Replace with your credentials
+engine = create_engine("mysql+pymysql://myuser:mypassword@localhost/sakila")
+
+
 import pandas as pd
 from sqlalchemy import create_engine
 
