@@ -30,6 +30,16 @@ films.head()         # DataFrame of film table
 films.columns        # all column names
 films.shape          # rows, cols
 
+sql = """
+SELECT c.first_name, c.last_name, p.amount, p.payment_date
+FROM payment p
+JOIN customer c ON p.customer_id = c.customer_id
+"""
+
+top_customers = pd.read_sql(sql, engine)
+print(type(top_customers))  # <class 'pandas.core.frame.DataFrame'>
+print(top_customers.head())
+
 # customers with their payments
 SELECT c.first_name, c.last_name, p.amount, p.payment_date
 FROM payment p
