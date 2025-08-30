@@ -15,34 +15,102 @@ import pandas as pd
 df = pd.read_csv("employees.csv")
 print(df.head())   # show first 5 rows
 
-2. Inspect Data
-df.shape          # rows, columns
-df.columns        # list of column names
-df.info()         # data types
-df.describe()     # summary stats for numeric cols
+🔹 1. Basic Info
+df.head()       # first 5 rows
+df.tail()       # last 5 rows
+df.shape        # (rows, columns)
+df.columns      # list of column names
+df.info()       # summary of columns & data types
+df.describe()   # summary stats for numeric columns
 
-3. Select Columns
-df["name"]            # single column
-df[["name", "salary"]]  # multiple columns
 
-4. Filter Rows
-# Employees with salary > 55k
-df[df["salary"] > 55000]
+👉 Used for quick inspection of your dataset.
 
-# Employees in IT department
-df[df["department"] == "IT"]
+🔹 2. Selecting Columns & Rows
+df["name"]                      # select one column (Series)
+df[["name", "salary"]]          # select multiple columns
+df.iloc[0]                      # first row (by index)
+df.loc[2, "name"]               # value in row 2, column "name"
 
-5. Sorting
-df.sort_values("salary", ascending=False)   # highest salaries first
 
-6. Add New Column
-# Add bonus = 10% of salary
+👉 .loc is label-based, .iloc is index-based.
+
+🔹 3. Filtering
+df[df["salary"] > 55000]               # filter by condition
+df[(df["salary"] > 55000) & (df["department"]=="IT")]  
+
+
+👉 Equivalent to SQL WHERE.
+
+🔹 4. Sorting
+df.sort_values("salary")                # ascending
+df.sort_values("salary", ascending=False)  # descending
+
+
+👉 Equivalent to SQL ORDER BY.
+
+🔹 5. Handling Missing Data
+df.isnull().sum()          # count missing values per column
+df.fillna(0)               # replace NaN with 0
+df.dropna()                # drop rows with NaN
+
+
+👉 Critical for data cleaning.
+
+🔹 6. Creating / Modifying Columns
 df["bonus"] = df["salary"] * 0.10
-print(df)
+df["hire_date"] = pd.to_datetime(df["hire_date"])
+df["year"] = df["hire_date"].dt.year
 
-7. Grouping & Aggregation
-# Average salary by department
-df.groupby("department")["salary"].mean()
 
-8. Save Back to CSV
-df.to_csv("employees_updated.csv", index=False)
+👉 New features can be derived easily.
+
+🔹 7. Grouping & Aggregation
+df.groupby("department")["salary"].mean()      # avg salary per dept
+df.groupby("department")["salary"].agg(["mean","max","min"])
+
+
+👉 Equivalent to SQL GROUP BY.
+
+🔹 8. Joining & Merging
+dept_info = pd.DataFrame({
+    "department": ["IT","HR","Finance"],
+    "location": ["NY","LA","SF"]
+})
+
+df.merge(dept_info, on="department", how="left")
+
+
+👉 Equivalent to SQL JOIN.
+
+🔹 9. Apply Functions
+df["name_length"] = df["name"].apply(len)   # length of each name
+df["salary_bracket"] = df["salary"].apply(lambda x: "High" if x > 58000 else "Low")
+
+
+👉 Very flexible, similar to SQL CASE WHEN.
+
+🔹 10. Value Counts & Unique
+df["department"].value_counts()   # count per dept
+df["department"].unique()         # unique values
+
+
+👉 Quick way to analyze categorical columns.
+
+🔹 11. Concatenation
+pd.concat([df.head(2), df.tail(2)])   # stack DataFrames
+
+🔹 12. Pivot Tables
+pd.pivot_table(df, values="salary", index="department", aggfunc="mean")
+
+
+👉 Excel-style pivot, powerful for analysis.
+
+🔹 13. Exporting
+df.to_csv("output.csv", index=False)
+df.to_excel("output.xlsx", index=False)
+
+⚡ Quick Summary
+Category	Functions
+Inspecting	head(), tail(), shape, info(), describe()
+Selecting
