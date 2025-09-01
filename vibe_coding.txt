@@ -3,17 +3,17 @@ Build a simple FastAPI + SQLAlchemy backend (reflect the Sakila database, no Pyd
 
 Requirements:
 
-When I run the UI, it should show all customers by default.
+1) When I run the UI, it should show all customers by default.
 
-Left sidebar with links: Customers and Films.
+2) Left sidebar with links: Customers and Films.
 
-In Customers page → list all customers, with two buttons per row:
+3) In Customers page → list all customers, with two buttons per row:
 
 Details: fetch and show this customer’s films and rental history.
 
 Login as: treat this customer as logged in, switch to Films view for that customer.
 
-In Films page:
+4) In Films page:
 
 If not logged in: show all films, plus a Details button to show availability (total vs rented vs available).
 
@@ -21,5 +21,5 @@ If logged in: show only that customer’s rentals and films.
 
 As logged-in user: allow selecting a film → Rent → insert rental into DB (with rental_date=now, staff_id=1) and update rental history accordingly.
 
-Add a global Logout button in header that clears login and returns to all customers view.
+5) Add a global Logout button in header that clears login and returns to all customers view.
 Keep it minimal and simple, matching Sakila schema directly.
